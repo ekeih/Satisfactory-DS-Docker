@@ -2,18 +2,13 @@ import execa from 'execa';
 import fetch from 'node-fetch';
 
 const previousPublishedBuild = process.env.PREVIOUS_TAG;
-const dockerToken = process.env.DOCKER_TOKEN;
 const githubToken = process.env.GH_TOKEN;
 const forceUpdate = process.env.FORCE_UPDATE;
 const depotName = process.env.DEPOT_NAME || 'public';
-const imageName = 'yfricke/satisfactory-server';
-const ghcrImageName = 'ghcr.io/yannickfricke/satisfactory-ds-docker';
+const imageName = 'ekeih/satisfactory-server';
+const ghcrImageName = 'ghcr.io/ekeih/satisfactory-ds-docker';
 
 function setup() {
-    if (!dockerToken) {
-        throw new Error('DOCKER_TOKEN environment variable is not set');
-    }
-
     if (!githubToken) {
         throw new Error('GH_TOKEN environment variable is not set');
     }
@@ -22,16 +17,7 @@ function setup() {
         throw new Error('PREVIOUS_TAG environment variable is not set');
     }
 
-    const dockerLoginResult = execa.sync('docker', ['login', '-u', `yfricke`, '-p', dockerToken], {
-        all: true,
-        stdio: 'inherit'
-    });
-
-    if (dockerLoginResult.failed) {
-        throw new Error(`Failed to login to Docker hub: ${dockerLoginResult.all}`);
-    }
-
-    const githubLoginResult = execa.sync('docker', ['login', 'ghcr.io', '-u', `yannickfricke`, '-p', githubToken], {
+    const githubLoginResult = execa.sync('docker', ['login', 'ghcr.io', '-u', `ekeih`, '-p', githubToken], {
         all: true,
         stdio: 'inherit'
     });
@@ -40,8 +26,8 @@ function setup() {
         throw new Error(`Failed to login to GitHub container registry: ${githubLoginResult.all}`);
     }
 
-    execa.sync('git', ['config', '--global', 'user.email', 'yannickfricke@googlemail.com']);
-    execa.sync('git', ['config', '--global', 'user.name', 'YannickFricke']);
+    execa.sync('git', ['config', '--global', 'user.email', 'ekeih@users.noreply.github.com']);
+    execa.sync('git', ['config', '--global', 'user.name', 'Max Rosin']);
 }
 
 function buildImage() {
@@ -100,15 +86,6 @@ function createTags(latestBuildId) {
 }
 
 function push() {
-    const dockerPushResult = execa.sync('docker', ['image', 'push', '--all-tags', imageName], {
-        all: true,
-        stdio: 'inherit'
-    });
-
-    if (dockerPushResult.failed) {
-        throw new Error(`Failed to push docker image: ${dockerPushResult.all}`);
-    }
-
     const githubPushResult = execa.sync('docker', ['image', 'push', '--all-tags', ghcrImageName], {
         all: true,
         stdio: 'inherit'
