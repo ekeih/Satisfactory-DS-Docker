@@ -2,7 +2,6 @@ import execa from 'execa';
 import fetch from 'node-fetch';
 
 const previousPublishedBuild = process.env.PREVIOUS_TAG;
-const dockerToken = process.env.DOCKER_TOKEN;
 const githubToken = process.env.GH_TOKEN;
 const forceUpdate = process.env.FORCE_UPDATE;
 const depotName = process.env.DEPOT_NAME || 'public';
@@ -10,25 +9,12 @@ const imageName = 'ekeih/satisfactory-server';
 const ghcrImageName = 'ghcr.io/ekeih/satisfactory-ds-docker';
 
 function setup() {
-    if (!dockerToken) {
-        throw new Error('DOCKER_TOKEN environment variable is not set');
-    }
-
     if (!githubToken) {
         throw new Error('GH_TOKEN environment variable is not set');
     }
 
     if (!previousPublishedBuild) {
         throw new Error('PREVIOUS_TAG environment variable is not set');
-    }
-
-    const dockerLoginResult = execa.sync('docker', ['login', '-u', `ekeih`, '-p', dockerToken], {
-        all: true,
-        stdio: 'inherit'
-    });
-
-    if (dockerLoginResult.failed) {
-        throw new Error(`Failed to login to Docker hub: ${dockerLoginResult.all}`);
     }
 
     const githubLoginResult = execa.sync('docker', ['login', 'ghcr.io', '-u', `ekeih`, '-p', githubToken], {
@@ -100,15 +86,6 @@ function createTags(latestBuildId) {
 }
 
 function push() {
-    const dockerPushResult = execa.sync('docker', ['image', 'push', '--all-tags', imageName], {
-        all: true,
-        stdio: 'inherit'
-    });
-
-    if (dockerPushResult.failed) {
-        throw new Error(`Failed to push docker image: ${dockerPushResult.all}`);
-    }
-
     const githubPushResult = execa.sync('docker', ['image', 'push', '--all-tags', ghcrImageName], {
         all: true,
         stdio: 'inherit'
